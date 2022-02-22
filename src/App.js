@@ -49,6 +49,7 @@ const App = () => {
 					text: `You do not have MetaMask installed.`,
 					icon: 'error'
 				});
+				return;
 			}
 			
 			const accounts = await ethereum.request({method: 'eth_requestAccounts'});
@@ -236,6 +237,7 @@ const App = () => {
 						text: `We could not register the domain ${domain}.potato.`,
 						icon: 'error'
 					});
+					return;
 				}
 			}
 		} catch(error) {
