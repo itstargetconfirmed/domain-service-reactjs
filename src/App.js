@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 
-
 import twitterLogo from './assets/twitter-logo.svg';
 import polygonLogo from './assets/polygonlogo.png';
 import ethLogo from './assets/ethlogo.png';
@@ -8,17 +7,21 @@ import ethLogo from './assets/ethlogo.png';
 
 import { ethers } from 'ethers';
 
-
 import contractAbi from './utils/abi-domains.json';
 import { networks } from './utils/networks';
 
 import './styles/App.css';
+
+import Swal from 'sweetalert2'
+import withReactContent from 'sweetalert2-react-content'
 
 // Constants
 const TWITTER_HANDLE = 'targetconfirmd';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const CONTRACT_ADDRESS = '0x56d04eC782E8F324f6515868c1065A5efd70AB16';
+
+const _Swal = withReactContent(Swal)
 
 const App = () => {
 
@@ -40,6 +43,12 @@ const App = () => {
 			// refactor later.
 			if (!ethereum) {
 				console.log(`You do not have MetaMask.`);
+				
+				await _Swal.fire({
+					title: `MetaMask Not Found`, 
+					text: `You do not have MetaMask installed.`,
+					icon: 'error'
+				});
 			}
 			
 			const accounts = await ethereum.request({method: 'eth_requestAccounts'});
@@ -48,6 +57,12 @@ const App = () => {
 
 		} catch(error) {
 			console.log(error);
+
+			await _Swal.fire({
+				title: `App Error`, 
+				text: error.message,
+				icon: 'error'
+			});
 		}
 	};
 
@@ -127,7 +142,7 @@ const App = () => {
 				{editing ? (
 				<div className="button-container">
   
-					<button className='cta-button mint-button' disabled={null} onClick={null}>
+					<button className='cta-button mint-button' disabled={null} onClick={updateDomain}>
 						Set data
 					</button>  
 					<button className='cta-button mint-button' onClick={() => {setEditing(false)}}>
@@ -146,13 +161,15 @@ const App = () => {
 	};
 
 	const mintDomain = async () => { 
-		if(!domain) { 
-			return;
-		}
+
 		
 		const domainLength = domain.length; 
-		if (domainLength === 0) { 
-			alert(`You cannot have a blank domain.`);
+		if (!domain || domainLength < 1 || domainLength > 10) { 
+			await _Swal.fire({
+				title: `Domain Validation Error`, 
+				text: `Your domain length must be between 1 and 10 characters inclusive.`,
+				icon: 'error'
+			});
 			return;
 		} 
 
@@ -184,16 +201,28 @@ const App = () => {
 				// register domain and wait for success.
 				let tx = await contract.register(domain, {value: ethers.utils.parseEther(price)});
 				const receipt = await tx.wait(); 
-				
-				console.log(`The domain ${domain} has been registered - https://mumbai.polygonscan.com/tx/${tx.hash}.`);
+			
 
 				if (receipt.status === 1) {
-				
+					console.log(`The domain ${domain} has been registered - https://mumbai.polygonscan.com/tx/${tx.hash}.`);
+
+					await _Swal.fire({
+						title: `Domain Registered`, 
+						text: `Your domain ${domain}.potato has been registered. We will now attempt to register the record.`,
+						icon: 'success'
+					});
+
 					tx = await contract.setRecord(domain, record);
 					await tx.wait(); 
 
 					console.log(`The record ${record} for domain ${domain} is set - https://mumbai.polygonscan.com/tx/${tx.hash}.`);
 					
+					await _Swal.fire({
+						title: `Domain Record Set.`, 
+						text: `The record ${record} for domain ${domain}.potato was set.`,
+						icon: 'success'
+					});
+
 					setTimeout(() => {
 						fetchMints();
 					}, 2000);
@@ -202,11 +231,20 @@ const App = () => {
 					setDomain('');
 				}
 				else { 
-					alert(`Transaction failed.`);
+					await _Swal.fire({
+						title: `Domain Registraton Error`, 
+						text: `We could not register the domain ${domain}.potato.`,
+						icon: 'error'
+					});
 				}
 			}
 		} catch(error) {
 			console.log(error);
+			await _Swal.fire({
+				title: `App Error`, 
+				text: error.message,
+				icon: 'error'
+			});
 		}
 	};
 
@@ -229,12 +267,24 @@ const App = () => {
 				await tx.wait(); 
 				console.log(`You set the record for ${domain} to ${record} - https://mumbai.polygonscan.com/tx/${tx.hash}.`);
 				
+				await _Swal.fire({
+					title: `Domain Record Updated.`, 
+					text: `The record ${record} for domain ${domain}.potato was updated.`,
+					icon: 'success'
+				});
+
 				fetchMints(); 
 				setRecord('');
 				setDomain('');
 			}
 		} catch(error) {
 			console.log(error);
+			await _Swal.fire({
+				title: `App Error`, 
+				text: error.message,
+				icon: 'error'
+			});
+
 		}
 
 	};
